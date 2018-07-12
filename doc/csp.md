@@ -126,7 +126,7 @@ web站点管理员希望允许web应用程序的用户在自己的内容中包�
 
 ### 启用报告
 
-默认情况下，不会发送违例(violation)报告。要启用违例报告，您需要指定report-URI指令，提供至少一个URI，以便向其交付报告:
+默认情况下，不会发送攻击(violation)报告。要启用攻击报告，您需要指定report-URI指令，提供至少一个URI，以便向其交付报告:
 
     Content-Security-Policy: default-src 'self'; 
     report-uri http://reportcollector.example.com/collector.cgi
@@ -135,15 +135,16 @@ web站点管理员希望允许web应用程序的用户在自己的内容中包�
 
 ---
 
-### 违例报告语法
+### 攻击报告语法
 
 报告JSON对象包含以下数据:
+
 | key word | meaning |
 | ------ | ------ |
 |blocked-uri|被内容安全策略阻止的资源的URI。如果被阻塞的URI与文档URI属于不同的源，那么被阻塞的URI将被截断，只包含概要、主机和端口。|
 |disposition|根据Content-Security-Policy-Report-Only 头或 Content-Security-Policy 头，决定执行“执行”或“报告”。|
-|document-uri|出现违例的文档的URI。|
-|effective-directive|引发违例执行的指令。|
+|document-uri|出现攻击的文档的URI。|
+|effective-directive|引发攻击执行的指令。|
 |origin-policy|内容安全策略HTTP头指定的原始策略。|
 |referrer|发生违法行为的文件的引用人。|
 |script-sample|引起违规的内联脚本、事件处理程序或样式的前40个字符。|
@@ -152,7 +153,7 @@ web站点管理员希望允许web应用程序的用户在自己的内容中包�
 
 ---
 
-### 违例报告样本
+### 攻击报告样本
 
 假如一个位于`http://example.com/signup.html`的页面。它使用以下策略，除了cdn.example.com中的样式表外，不允许其他任何内容。
 
