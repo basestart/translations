@@ -1,0 +1,1 @@
+### CSP Is Dead, Long Live CSP! On the Insecurity of Whitelists and the Future of Content Security Policy
