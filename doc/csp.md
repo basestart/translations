@@ -138,42 +138,17 @@ web站点管理员希望允许web应用程序的用户在自己的内容中包�
 ### 违例报告语法
 
 报告JSON对象包含以下数据:
-
-- blocked-uri
-
-    被内容安全策略阻止的资源的URI。如果被阻塞的URI与文档URI属于不同的源，那么被阻塞的URI将被截断，只包含概要、主机和端口。
-
-- disposition
-
-    根据Content-Security-Policy-Report-Only 头或 Content-Security-Policy 头，决定执行“执行”或“报告”。
-
-- document-uri
-
-    出现违例的文档的URI。
-
-- effective-directive
-
-    引发违例执行的指令。
-
-- origin-policy
-
-    内容安全策略HTTP头指定的原始策略。
-
-- referrer
-
-    发生违法行为的文件的引用人。
-
-- script-sample
-
-    引起违规的内联脚本、事件处理程序或样式的前40个字符。
-
-- status-code
-
-    实例化全局对象的资源的HTTP状态码。
-
-- violated-directive
-
-    被违反的策略部分的名称。
+| key word | meaning |
+| ------ | ------ |
+|blocked-uri|被内容安全策略阻止的资源的URI。如果被阻塞的URI与文档URI属于不同的源，那么被阻塞的URI将被截断，只包含概要、主机和端口。|
+|disposition|根据Content-Security-Policy-Report-Only 头或 Content-Security-Policy 头，决定执行“执行”或“报告”。|
+|document-uri|出现违例的文档的URI。|
+|effective-directive|引发违例执行的指令。|
+|origin-policy|内容安全策略HTTP头指定的原始策略。|
+|referrer|发生违法行为的文件的引用人。|
+|script-sample|引起违规的内联脚本、事件处理程序或样式的前40个字符。|
+|status-code|实例化全局对象的资源的HTTP状态码。|
+|violated-directive|被违反的策略部分的名称。|
 
 ---
 
