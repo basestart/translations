@@ -1,4 +1,4 @@
-# [CSP 已死， CSP永生， 论白名单不安全及CSP的未来-译](https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45542.pdf)
+## [CSP 已死， CSP永生， 论白名单不安全及CSP的未来-译](https://storage.googleapis.com/pub-tools-public-publication-data/pdf/45542.pdf)
 
     CSP Is Dead, Long Live CSP! On the Insecurity of Whitelists and the Future of Content Security Policy
     - Lukas Weichselbaum  Google Inc. lwe@google.com
@@ -53,7 +53,99 @@ CSP(内容安全策略)一种被设计用于减轻现代web应用头号安全漏
 
 ### 2.1 概述
 
-### CSP隐患模型
+内容安全策略(Content Security Policy, CSP)是一种声明机制，允许web作者在其应用程序上指定一些安全限制，通过支持用户代理执行策略。
+
+CSP被用作“一种工具，开发人员可以使用它以各种方式锁定他们的应用程序，从而降低内容注入漏洞(…)的风险。”并减少应用程序执行的特权。”[3]
+
+CSP正快速发展:目前最新规范的版本是CSP3，并且该标准由用户代理非均衡实现。例如，Chromium完全支持CSP2，并实现了CSP3的大部分草案，其中有一些(CSP3规范)，还处在实验性的运行时阶段，而Mozilla Firefox和基于webkit的浏览器最近刚刚获得了完全的CSP2支持[8]。在讨论CSP的细节时，我们不关注标准的任何特定修订，而是尝试广泛概述(规范的)应用和规范版本[31]。
+
+CSP策略在`Content-Security-Policy`HTTP响应头或`<meta>`标签中使用。CSP的功能可分为三类:
+
+- 资源加载限制
+
+  CSP最著名和最常用的方面是将各种子资源加载限制到开发人员允许的一组源(即源列表)的能力。常用的指令有`script--src`、`style-src`、`img-src`和接管所有的`default-src`;表1列出了管理资源的指令的完整列表。有一种特殊情况，`script-src`和`style-src`指令有几个附加的配置选项;它们允许对脚本和样式表进行更细粒度的控制，后面将对此进行讨论。
+
+- 基于url的辅助限制
+
+  通过监控获取的子资源不能阻止某些类型的攻击，但同样需要一个可信源概念，可以与之交互文档。一个常见的例子是`frame-ancestors`指令， 为防止clickjacking[10](攻击), 它定义了加载文档的许可源。类似地，`base-uri`和`form-action`定义了哪些url可以作为`<target #href> 以及 <form #action>`的目标，以防止某些`post-xss`攻击[38]
+
+- 各种限制和硬化选项
+
+  由于web应用程序中缺乏其他通用机制启用安全限制，CSP已经成为几个松散安全特性的安寄所。这包括`block-all-mixed-content`和`upgrade-insecure-requests` 关键字，它可以防止混合内容bug和改进HTTPS支持;`plugin-types`，限制允许的插件格式;`sandbox`，它反映了HTML5沙箱框架的安全特性。
+
+`表一：`
+
+|Directive|Controlled Resource type|
+|---|---|
+|default-src|所有资源(降级)|
+|script-src|脚本|
+|style-src|样式表|
+|img-src|图片|
+|media-src|媒体资源(audio, video)|
+|font-src|字体|
+|frame-src|文档(frames)|
+|object-src|插件格式(object, embed)|
+|child-src|文档(frames), [shared]workers|
+|worder-src|[shared]workers|
+|manifext-src|Manifest|
+
+为了使web应用程序与针对XSS的内容安全策略兼容，web作者常常需要重构由应用程序逻辑以及框架和模板系统生成的HTML标记。特别是内联脚本、eval和等效结构的使用、内联事件处理程序和javascript: 必须避免uri或使用对CSP友好替代方法进行重构。
+
+除了执行策略限制的默认行为之外，还可以在`report-only`模式中配置CSP，在这种模式中，攻击行为会被记录下来，但不会被强制执行。在这两种情况下，`report-uri`指令可以用来发送攻击报告，通知应用程序的所有者不兼容的标记。
+
+#### 2.1.1 资源表(source lists)
+
+`listing 1: 传统CSP策略样本`
+
+```
+Content-Security-Policy: script-src ’self’; style-src
+cdn.example.org third-party.org; child-src https:
+```
+
+CSP源列表(通常称为白名单)一直是CSP的核心部分，是传统指定信任关系的方式。例如，如清单1所示，应用程序可能只信任其承载域来加载脚本，但允许使用来自`cdn.example.org`和`third party.org`的字体或图像，并要求通过HTTPS加载框架，同时不限制其他资源类型。
+
+对于任何指令，白名单可以由主机名(`example.org`, `example.com`)组成，可能包括*通配符，扩展对所有子域的信任(`*.example.org`);方案(`https:data:`);以及表示当前文档来源的特殊关键字`self`和`none`，执行空源列表并禁止加载任何资源.
+
+从CSP2开始，作者还可以在他们的白名单中指定路径(`example.org/resources/js/`)。有趣的是，不能依赖基于路径的限制来限制资源的加载位置;关于这个问题的更广泛的讨论载于第2.3.4节。
+
+#### 2.1.2 脚本执行限制
+
+由于脚本在现代web应用程序中的重要性，`script-src`指令提供了几个关键字，以允许对脚本执行进行更细粒度的控制:
+
+|Directive|Controlled Resource type|
+|---|---|
+|unsafe-inline|允许内联`script`脚本块和javascript事件句柄(可以取消CSP对XSS的保护)执行|
+|unsafe-eval|允许使用javascript API, 把数据当成代码执行， 比如`eval()`， `setTimeout()`， `setInterval()` 和 `Function` 构造函数， 这些API被`script-src`指令阻塞|
+|CSP nonce|允许策略指定作为脚本授权令牌的一次性值(`script-src`, `nonce-random-value`)。页面上任何带有正确`nonce=“random-value”`属性的脚本都可以执行。|
+|CSP hash|允许开发人员在页面中列出预期脚本的密码散列(`script-src`, `sha256-nGA…`)。任何内联脚本，其摘要与策略中提供的值相匹配，将被允许执行。|
+
+类似地，随机数(Nonce)和散列可以与`style-src`指令一起使用，允许通过随机值加载内联样式表和白名单内外部CSS。
+
+`Listing 2: 使用随机数和hash值锁定策略`
+
+```
+Content-Security-Policy: script-src ’nonce-BPNLMA4’
+’sha256-OPc+f+ieuYDM...’ object-src ’none’;
+```
+### 2.2 CSP威胁模型
+
+CSP要想提供安全防护，它必须防止攻击者利用漏洞， 对应用程序的用户进行恶意操作。就目前来看，CSP对三种类型漏洞提供防护。
+
+- XSS
+
+  在有漏洞应用程序中注入和执行不受信任的脚本(受`script-src`和`object-src`指令保护)
+
+- Clickjacking
+
+  通过在攻击者控制的页面上覆盖隐藏的帧，迫使用户在受攻击的应用程序中执行非期望的操作(通过限制`frame-ancestors`来保护)
+
+- Mixed content
+ 
+  意外地将资源从不安全的协议中加载到通过HTTPS交付的页面上(通过使用`upgrade-insecure-requests`和`block-all-mixed-content`关键字， 并将脚本和敏感资源的加载限制为HTTPS进行保护)。
+
+因此，只有一小部分CSP指令对XSS保护有用。2.2.2节进一步讨论在应用程序上下文中执行恶意脚本攻击所有指令提供的保护。
+
+#### 2.2.1 采用CSP的好处
 
 ### 脚本执行绕过
 
